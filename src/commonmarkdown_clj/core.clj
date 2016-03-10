@@ -9,7 +9,8 @@
 
 ;; execute define-is-token-funcs to actually define the given functions:
 ;; is-literal, is-symbol, etc.
-(define-is-token-funcs :literal :thematic-break :atx-heading)
+(define-is-token-funcs :literal :thematic-break :atx-heading :l1-setext-heading
+                       :l2-setext-heading :blank-line :paragraph)
 
 (defn- build-ast
   "Builds an abstract syntax tree given a list of tokens as produced by tokenize"
@@ -26,9 +27,18 @@
           (is-atx-heading token)
             (recur (rest tokens)
                    (conj ast token))
-          (is-literal token)
+          (is-l1-setext-heading token)
+            (recur (rest tokens)
+                   (conj ast token))
+          (is-l2-setext-heading token)
+            (recur (rest tokens)
+                    (conj ast token))
+          (is-blank-line token)
             (recur (rest tokens)
                    (conj ast tokens))
+          (is-paragraph token)
+            (recur (rest tokens)
+                    (conj ast tokens))
           :else
             (throw (unexpected-token-exception token)))))))
 
@@ -41,8 +51,18 @@
         (is-atx-heading tree)
           (str "<h" (first (second tree)) ">" (second (second tree)) "</h" (first (second tree)) ">")
 
-        (is-literal tree)
-          (second tree)
+        (is-l1-setext-heading tree)
+          (str "<h1>" (second tree) "</h1>")
+
+        (is-l2-setext-heading tree)
+          (str "<h2>" (second tree) "</h2>")
+
+        (is-blank-line tree)
+          (str "")
+
+        (is-paragraph tree)
+          (str "<p>" (second tree) "</p>")
+
         ;; Only executed once: the first time eval-tree is called, no subsequent
         ;; recursive call will go through this branch
         (coll? tree)

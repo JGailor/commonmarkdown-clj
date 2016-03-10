@@ -1,5 +1,6 @@
 (ns commonmarkdown-clj.lexer
-  (:require [commonmarkdown-clj.util :refer :all]))
+  (:require [commonmarkdown-clj.util :refer :all]
+            [clojure.string :as s]))
 
 (defn tokenize-chunk
   "Given a template substring returns a tuple of [match token]
@@ -10,14 +11,23 @@
   [template]
   (when-match template
     ;; match symbols e.g. {{foo}}
-    [thematic-break #"\A(\s{0,3}((-\s*?){3,}|(_\s*?){3,}|(\*\s*?){3,}))\s*$"]
-      [(first thematic-break) [:thematic-break (first thematic-break)]]
+    [l1-setext-heading #"\A(( {0,3}[^ ](.+?)\n)+) {0,3}(=+) *(\n|$)"]
+      [(first l1-setext-heading) [:l1-setext-heading (s/replace (second l1-setext-heading) #"\n" " ")]]
 
-    [atx-heading #"\A {0,3}(#{1,6})(?: (.*?)(?: #*)? *)?$"]
-      [(first atx-heading) [:atx-heading [(count (second atx-heading)) (clojure.string/trim (atx-heading 2))]]]
+    [l2-setext-heading #"\A(( {0,3}[^ ](.+?)\n)+) {0,3}(-+) *(\n|$)"]
+      [(first l2-setext-heading) [:l2-setext-heading (s/replace (second l2-setext-heading) #"\n" " ")]]
 
-    [literal #"\A([\s\S][\s\S]*?)$"]
-      [(last literal) [:literal (last literal)]]))
+    [thematic-break #"\A(\s{0,3}((-\s*?){3,}|(_\s*?){3,}|(\*\s*?){3,}))\s*(\n|$)"]
+      [(first thematic-break) [:thematic-break (second thematic-break)]]
+
+    [atx-heading #"\A {0,3}(#{1,6})(?: (.*?)(?: #*)? *)?(\n|$)"]
+      [(first atx-heading) [:atx-heading [(count (second atx-heading)) (s/trim (atx-heading 2))]]]
+
+    [blank-line #"\A\n"]
+      [(first blank-line) [:blank-line (first blank-line)]]
+
+    [paragraph #"\A(.+)(\n|$)"]
+      [(first paragraph) [:paragraph (s/replace (second paragraph) #"\n" " ")]]))
 
 (defn tokenize
   [template]
