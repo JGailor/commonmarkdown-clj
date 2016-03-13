@@ -23,11 +23,14 @@
     [atx-heading #"\A {0,3}(#{1,6})(?: (.*?)(?: #*)? *)?(\n|$)"]
       [(first atx-heading) [:atx-heading [(count (second atx-heading)) (s/trim (atx-heading 2))]]]
 
+    [code-block #"\A(( {4,}.+\n?)(( {4,}.+\n?)| *\n)*)(?:\n|$)"]
+      [(first code-block) [:code-block (s/replace (second code-block) #"(\A|\n|(\r\n)) {1,4}" "$1")]]
+
     [blank-line #"\A\n"]
       [(first blank-line) [:blank-line (first blank-line)]]
 
-    [paragraph #"\A(.+)(\n|$)"]
-      [(first paragraph) [:paragraph (s/replace (second paragraph) #"\n" " ")]]))
+    [paragraph #"\A((.+\n?)+)(?:\n\n|$)"]
+      [(first paragraph) [:paragraph (s/trim (second paragraph))]]))
 
 (defn tokenize
   [template]

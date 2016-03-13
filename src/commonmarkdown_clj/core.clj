@@ -10,7 +10,7 @@
 ;; execute define-is-token-funcs to actually define the given functions:
 ;; is-literal, is-symbol, etc.
 (define-is-token-funcs :literal :thematic-break :atx-heading :l1-setext-heading
-                       :l2-setext-heading :blank-line :paragraph)
+                       :l2-setext-heading :code-block :blank-line :paragraph)
 
 (defn- build-ast
   "Builds an abstract syntax tree given a list of tokens as produced by tokenize"
@@ -33,12 +33,15 @@
           (is-l2-setext-heading token)
             (recur (rest tokens)
                     (conj ast token))
+          (is-code-block token)
+            (recur (rest tokens)
+                   (conj ast token))
           (is-blank-line token)
             (recur (rest tokens)
-                   (conj ast tokens))
+                   (conj ast token))
           (is-paragraph token)
             (recur (rest tokens)
-                    (conj ast tokens))
+                    (conj ast token))
           :else
             (throw (unexpected-token-exception token)))))))
 
@@ -56,6 +59,9 @@
 
         (is-l2-setext-heading tree)
           (str "<h2>" (second tree) "</h2>")
+
+        (is-code-block tree)
+          (str "<pre><code>" (second tree) "</code></pre>")
 
         (is-blank-line tree)
           (str "")
